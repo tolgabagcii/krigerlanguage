@@ -1,0 +1,261 @@
+<script src="assets/sections/json1.js"></script>
+<script src="assets/sections/json2.js"></script>
+
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Kriger</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" href="https://d35aaqx5ub95lt.cloudfront.net/images/duolingo-touch-icon2.png">
+    <link rel="stylesheet" href="assets/main/mobile.css">
+    <link rel="stylesheet" href="assets/main/general.css">
+
+</head>
+<div id="wordListModal" class="word-list-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Kelime Listesi</h2>
+            <div class="header-buttons">
+                <button id="downloadPdfBtn" class="pdf-btn">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+
+            </div>
+        </div>
+
+        <div class="search-section">
+            <input type="text" id="wordSearchInput" placeholder="Kelime ara..." class="search-input">
+            <button style="display: none;" id="clearSearch" class="clear-btn">Temizle</button>
+        </div>
+
+        <div class="table-wrapper">
+
+            <div class="words-wrapper" id="wordsList">
+
+            </div>
+
+        </div>
+        <button class="back-btn close-modal">
+            <i class="fas fa-chevron-left"></i> Geri Dön
+        </button>
+    </div>
+</div>
+
+<body>
+    <div class="quiz-container" id="quizContainer">
+
+        <div class="content-wrapper">
+
+            <div class="sidebar left" id="leftSidebar">
+                <button class="expand-btn" id="leftExpandBtn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+
+                <button class="sidebar-btn active" id="emptyAnswers" title="Boş doldurma sorusu">
+                    <i class="fas fa-edit"></i>
+                    <span class="sidebar-btn-text">Kelime Quiz</span>
+                </button>
+
+            </div>
+
+
+            <div class="main-content">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+
+
+                <div class="example-sentence" id="exampleSentence"></div>
+                <div class="content-area">
+
+                    <div class="question-area">
+                        <h3 class="question-text" id="questionText"></h3>
+
+
+                        <div class="image-preview" id="imagePreview">
+                            <div class="image-placeholder" id="imagePlaceholder">
+                                <i class="fas fa-image"></i>
+                                <span>Görsel Eklendi</span>
+                                <button class="image-upload-btn" id="uploadBtn">
+                                    <i class="fas fa-upload"></i> Yeni Görsel
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <div class="options-container" id="optionsContainer">
+
+                        </div>
+
+                        <div class="text-input-area" id="textInputArea">
+
+                            <div class="textbolum">
+                                <input type="text" class="text-input" placeholder="Kelimenin anlamını yazınız..." id="textInput">
+                                <div class="text-input-controls" id="textInputControls">
+                                    <button class="text-input-btn" id="textSubmitBtn" title="Kontrol Et">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="correct-answer" id="correctAnswer"></div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <div class="enaltbar">
+                    <button class="toggle-controls-btn" id="toggleControlsBtn">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <div class="bottom-controls">
+                        <div class="controls-right">
+                            <button class="control-btn" id="wordListBtn">
+                                <i class="fas fa-list"></i>
+                                <span>Kalime Listesi</span>
+                            </button>
+                            <button class="control-btn" id="listenBtn" style="display: none;">
+                                <i class="fas fa-volume-up"></i>
+                                <span>Dinle</span>
+                            </button>
+                        </div>
+                        <div class="stats-container">
+                            <div class="stat-item correct">
+                                <div class="stat-icon">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="correctCount">0</span>
+                                    <span class="stat-label">Doğru</span>
+                                </div>
+                            </div>
+                            <div class="stat-item incorrect">
+                                <div class="stat-icon">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="incorrectCount">0</span>
+                                    <span class="stat-label">Yanlış</span>
+                                </div>
+                            </div>
+                            <div class="stat-item empty">
+                                <div class="stat-icon">
+                                    <i class="fas fa-minus"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="emptyCount">0</span>
+                                    <span class="stat-label">Boş</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="controls-center">
+                            <button class="control-btn secondary" id="prevBtn">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="question-counter" id="questionCounter">1/10</span>
+                            <button class="control-btn primary" id="nextBtn" disabled>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="sidebar right" id="rightSidebar">
+                <button class="expand-btn" id="rightExpandBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <button class="sidebar-btn" id="writeMode" title="Yazma modu">
+                    <i class="fas fa-keyboard"></i>
+                    <span class="sidebar-btn-text">Yazma Modu</span>
+                </button>
+                <button class="sidebar-btn" id="imageMode" title="Görsel ekleme">
+                    <i class="fas fa-image"></i>
+                    <span class="sidebar-btn-text">Görsel Ekle</span>
+                </button>
+                <button class="sidebar-btn" id="listenMode" title="Dinleme modu">
+                    <i class="fas fa-headphones"></i>
+                    <span class="sidebar-btn-text">Dinleme Modu</span>
+                </button>
+                <button id="languageMode" class="sidebar-btn">
+                    <img id="languageFlag" class="flag-icon" width="30" height="20" alt="Flag" style="display: none; vertical-align: middle; margin-right: 5px;">
+                    <i class="fas fa-flag"></i>
+                    <span class="sidebar-btn-text">Türkçe</span>
+                </button>
+
+                <button class="sidebar-btn" id="colorMode" title="Renk modu">
+                    <i class="fas fa-palette"></i>
+                    <span class="sidebar-btn-text">Renk Modu</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="topiclist vibrate" id="topiclist"></div>
+
+
+    <div class="overlay" id="categoryOverlay"></div>
+
+    <div class="category-panel" id="categoryPanel">
+        <div class="panel-header">
+
+            <h3>Bölümler</h3>
+        </div>
+        <div class="category-list" id="categoryList">
+
+
+        </div>
+        <button class="back-btn">
+            <i class="fas fa-chevron-left"></i> Ana Menü
+        </button>
+
+    </div>
+
+
+    <div id="quizCompletedOverlay" class="quiz-complete">
+        <div class="result-card">
+
+            <h2 class="result-title"><i class="fas fa-crown"></i> Ding dang ding! Dil bariyerlerini yıktın 🔥</h2>
+
+            <div class="result-stats">
+                <div class="stat-item correct">
+                    <i class="fas fa-check"></i>
+                    <span id="resultCorrect">0</span> Doğru
+                </div>
+
+                <div class="stat-item incorrect">
+                    <i class="fas fa-times"></i>
+                    <span id="resultIncorrect">0</span> Yanlış
+                </div>
+
+                <div class="stat-item empty">
+                    <i class="fas fa-minus"></i>
+                    <span id="resultEmpty">0</span> Boş
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <audio id="audioPlayer"></audio>
+
+    <audio id="correctSound" src="assets/sounds/correct.mp3"></audio>
+    <audio id="incorrectSound" src="assets/sounds/incorrect.mp3"></audio>
+    <audio id="finishSound" src="assets/sounds/finish.mp3"></audio>
+
+    <script src="assets/main/general.js"></script>
+</body>
+
+</html>
