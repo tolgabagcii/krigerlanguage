@@ -996,6 +996,7 @@ playCorrectSound();
         } else {
             this.state.incorrectAnswers++;
             inputElement.classList.add('error');
+            playIncorrectSound();
             
 
             let answerHTML;
@@ -1027,7 +1028,7 @@ playCorrectSound();
                 console.log("yanlış");
                 correctAnswerElement.className = 'correct-answer incorrect';
                 this.setSidebarStatus('incorrect');
-                playIncorrectSound();
+                
 
 
 
@@ -3213,3 +3214,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 </html>
+
