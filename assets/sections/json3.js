@@ -1,4 +1,4 @@
-{
+window.json3 = {
   "Etkinlik 1": {
     "word1": {
       "Almanca": "ab",
@@ -34,7 +34,7 @@
       "Almanca": "die Abfahrt",
       "Türkçe": "kalkış",
       "kelime türü": "isim",
-      "örnek cümle": "Die Abfahrt ist um 10 Uhr. Kalkış saat 10’da.",
+      "örnek cümle": "Die Abfahrt ist um 10 Uhr. Kalkış saat 10'da.",
       "ses url": "",
       "görsel url": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&h=350&fit=crop",
       "renkli yazı metni": "die",
@@ -174,11 +174,11 @@
       "Almanca": "anfangen",
       "Türkçe": "başlamak",
       "kelime türü": "fiil",
-      "örnek cümle": "Die Schule fängt um 8 Uhr an. Okul 8’de başlıyor.",
+      "örnek cümle": "Die Schule fängt um 8 Uhr an. Okul 8'de başlıyor.",
       "ses url": "",
       "görsel url": "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&h=350&fit=crop",
       "renkli yazı metni": "anfangen",
       "renk": "#3b82f6"
     }
   }
-}
+};
