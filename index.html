@@ -989,15 +989,13 @@ class QuizApp {
 
 
             this.state.correctAnswers++;
-playCorrectSound();
-            
+            playCorrectSound();
             inputElement.classList.remove('error');
             correctAnswerElement.style.display = 'none';
         } else {
             this.state.incorrectAnswers++;
             inputElement.classList.add('error');
             playIncorrectSound();
-            
 
             let answerHTML;
             if (this.state.currentQuestionLanguage === 'tr') {
@@ -1011,15 +1009,12 @@ playCorrectSound();
                 }
                 answerHTML = german;
             } else { 
-
                 answerHTML = this.state.currentWord.Türkçe;
             }
-
 
             correctAnswerElement.innerHTML = `Doğru cevap: <strong>${answerHTML}</strong>`;
             if (answer === correctAnswer) {
                 correctAnswerElement.className = 'correct-answer correct';
-
                 this.setSidebarStatus('correct');
 
 
@@ -1028,7 +1023,6 @@ playCorrectSound();
                 console.log("yanlış");
                 correctAnswerElement.className = 'correct-answer incorrect';
                 this.setSidebarStatus('incorrect');
-                
 
 
 
@@ -1168,11 +1162,7 @@ playCorrectSound();
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const app = new QuizApp();
-    window.quizApp = app;
 
-});
 
 let allWordsForTable = [];
 let filteredWords = [];
@@ -3212,6 +3202,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </body>
 
-
 </html>
-
