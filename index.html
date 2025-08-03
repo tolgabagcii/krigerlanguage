@@ -989,7 +989,7 @@ class QuizApp {
 
 
             this.state.correctAnswers++;
-            playCorrectSound();
+            
             inputElement.classList.remove('error');
             correctAnswerElement.style.display = 'none';
         } else {
@@ -1016,6 +1016,7 @@ playIncorrectSound();
             correctAnswerElement.innerHTML = `Doğru cevap: <strong>${answerHTML}</strong>`;
             if (answer === correctAnswer) {
                 correctAnswerElement.className = 'correct-answer correct';
+playCorrectSound();
                 this.setSidebarStatus('correct');
 
 
