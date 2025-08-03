@@ -995,7 +995,7 @@ class QuizApp {
         } else {
             this.state.incorrectAnswers++;
             inputElement.classList.add('error');
-            playIncorrectSound();
+            
 
             let answerHTML;
             if (this.state.currentQuestionLanguage === 'tr') {
@@ -1011,6 +1011,7 @@ class QuizApp {
             } else { 
                 answerHTML = this.state.currentWord.Türkçe;
             }
+playIncorrectSound();
 
             correctAnswerElement.innerHTML = `Doğru cevap: <strong>${answerHTML}</strong>`;
             if (answer === correctAnswer) {
