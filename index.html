@@ -1010,7 +1010,7 @@ playCorrectSound();
                 }
                 answerHTML = german;
             } else { 
-playIncorrectSound();
+
                 answerHTML = this.state.currentWord.Türkçe;
             }
 
@@ -1027,6 +1027,7 @@ playIncorrectSound();
                 console.log("yanlış");
                 correctAnswerElement.className = 'correct-answer incorrect';
                 this.setSidebarStatus('incorrect');
+                playIncorrectSound();
 
 
 
@@ -3209,5 +3210,6 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 </body>
+
 
 </html>
