@@ -827,54 +827,36 @@ class QuizApp {
     }
 
     
-    showQuizCompleted() {
+    showQuizCompleted(){
         playFinishSound();
-        document.getElementById('topiclist')
-            .click(); 
-
-
-        const overlay = document.getElementById('quizCompletedOverlay');
-        overlay.style.display = "flex";
-
-        kilitCategory();
-
-
-        if (!overlay) return;
-
-        overlay.classList.add('show');
-        document.getElementById('resultCorrect')
-            .textContent = this.state.correctAnswers;
-        document.getElementById('resultIncorrect')
-            .textContent = this.state.incorrectAnswers;
-        document.getElementById('resultEmpty')
-            .textContent = this.state.emptyAnswers;
-
-        openBottomControls();
-
-        document.querySelectorAll('.category-item.selected')
-            .forEach(el => el.classList.remove('selected'));
-
-
-        const panel = document.getElementById('categoryPanel');
-        const overlayBg = document.getElementById('categoryOverlay');
-        if (panel && overlayBg) {
-            panel.classList.add('show');
-            overlayBg.classList.add('show');
-        }
-
-
-
-        if (!overlay) return;
-
-        overlay.classList.remove('show');
-
-        overlay.style.display = 'flex';
-
-        void overlay.offsetWidth;
-
-        overlay.classList.add('show');
-
+        const overlay=document.getElementById('quizCompletedOverlay');
+        const black=document.getElementById('blackScreen');
+        black.style.display='flex';
+        black.classList.add('fade');
+        black.addEventListener('animationend',function h(){
+            black.classList.remove('fade');
+            black.style.display='none';
+            black.removeEventListener('animationend',h);
+            overlay.style.display='flex';
+            overlay.classList.add('show');
+            document.getElementById('resultCorrect').textContent=quizApp.state.correctAnswers;
+            document.getElementById('resultIncorrect').textContent=quizApp.state.incorrectAnswers;
+            document.getElementById('resultEmpty').textContent=quizApp.state.emptyAnswers;
+            openBottomControls();
+            kilitCategory();
+            document.querySelectorAll('.category-item.selected').forEach(el=>el.classList.remove('selected'));
+            const topic=document.getElementById('topiclist');
+            topic.style.transition='bottom 0.5s cubic-bezier(0.68,-0.55,0.27,1.55)';
+            topic.style.bottom='-100px';
+            setTimeout(()=>{
+            document.getElementById('categoryPanel').classList.add('show');
+            document.getElementById('categoryOverlay').classList.add('show');
+            },200);
+        });
     }
+
+
+
 
 
 
@@ -2908,3 +2890,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 100);
     });
 });
+
+
+(function(){
+    const ready=Promise.all([
+        new Promise(r=>window.addEventListener('load',r,{once:true})),
+        (document.fonts&&document.fonts.ready)||Promise.resolve()
+    ]);
+
+    ready
+      .then(()=>{                       
+          const imgs=[...document.querySelectorAll('img,object[type="image/svg+xml"]')];
+          return Promise.all(imgs.map(el=>{
+              if(el.tagName==='IMG'&&el.decode)return el.decode().catch(()=>{});
+              if(el.tagName==='OBJECT')return new Promise(r=>el.addEventListener('load',r,{once:true}));
+              return Promise.resolve();
+          }));
+      })
+      .then(()=>new Promise(r=>setTimeout(r,4000))) 
+      .then(()=>{
+          const l=document.getElementById('pageLoader');
+          if(!l)return;
+          l.classList.add('hide');
+          setTimeout(()=>l.remove(),500);
+      });
+})();
+
+

@@ -14,8 +14,16 @@
     <link rel="apple-touch-icon" href="https://d35aaqx5ub95lt.cloudfront.net/images/duolingo-touch-icon2.png">
     <link rel="stylesheet" href="assets/main/mobile.css">
     <link rel="stylesheet" href="assets/main/general.css">
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js" type="module"></script>
 
 </head>
+
+<div id="pageLoader" class="page-loader">
+    <dotlottie-wc src="https://lottie.host/f0d563b6-4b2e-47db-af14-6d796dce3f82/Y4fuXhV0X3.lottie" style="width: 300px;height: 300px" speed="1" autoplay loop></dotlottie-wc>
+    <span class="loader-text">Hazırlanıyorum...</span>
+</div>
+
+
 <div id="wordListModal" class="word-list-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -46,6 +54,15 @@
     </div>
 </div>
 
+
+<div id="blackScreen">
+    <div class="blackScreenItem">
+        <dotlottie-wc src="https://lottie.host/95562fce-b057-4586-b395-fb57dab6bbf4/RvR8XtfksN.lottie" style="width: 300px;height: 300px" speed="1" autoplay loop></dotlottie-wc>
+        <span>şlap şlap Yaşasın!</span>
+    </div>
+</div>
+
+
 <body>
     <div class="quiz-container" id="quizContainer">
 
@@ -72,9 +89,17 @@
 
                 <div class="example-sentence" id="exampleSentence"></div>
                 <div class="content-area">
+                    
 
                     <div class="question-area">
-                        <h3 class="question-text" id="questionText"></h3>
+                        <div class="sorutext">
+
+                            <h3 class="question-text" id="questionText"></h3>
+                            <dotlottie-wc src="https://lottie.host/645cbe7c-63fa-4eb9-ba38-6be8f821b385/ZWmPAkAUjL.lottie" style="width: 200px;height: 250px" speed="1" autoplay loop></dotlottie-wc>
+
+                        </div>
+                        
+                        
 
 
                         <div class="image-preview" id="imagePreview">
@@ -255,7 +280,2930 @@
     <audio id="incorrectSound" src="assets/sounds/incorrect.mp3"></audio>
     <audio id="finishSound" src="assets/sounds/finish.mp3"></audio>
 
-    <script src="assets/main/general.js"></script>
+
+<script>
+
+    const SOFT_MS = 10;
+
+    document.addEventListener(
+        'pointerdown'
+        , e => {
+            if (e.target.closest('.vibrate') && navigator.vibrate) {
+                navigator.vibrate(SOFT_MS);
+            }
+        }, {
+            passive: true
+        }
+    );
+
+const shield = document.getElementById('categoryOverlay');
+const events = ['pointerdown', 'pointerup', 'click', 'mousedown', 'mouseup', 'touchstart', 'touchend'];
+
+function blokla(e) {
+    e.stopPropagation();
+    e.preventDefault();
+}
+
+function kilitCategory() {
+    events.forEach(evt => shield.addEventListener(evt, blokla, true)); 
+}
+
+function kilitAcCategory() {
+    events.forEach(evt => shield.removeEventListener(evt, blokla, true)); 
+}
+
+const wordData = {};
+Object.keys(window)
+    .forEach(key => {
+        if (/^json\d+$/.test(key) && typeof window[key] === 'object') {
+            Object.assign(wordData, window[key]);
+        }
+    });
+
+function playCorrectSound() {
+    const a = document.getElementById('correctSound');
+    a.currentTime = 0;
+    a.play();
+}
+
+function playIncorrectSound() {
+    const a = document.getElementById('incorrectSound');
+    a.currentTime = 0;
+    a.play();
+}
+
+function playFinishSound() {
+    const a = document.getElementById('finishSound');
+    a.currentTime = 0;
+    a.play();
+}
+
+
+class QuizApp {
+    constructor() {
+
+        this.state = {
+            activeCategory: 'Meyveler'
+            , totalQuestions: Object.keys(wordData['Meyveler'])
+                .length
+            , writeMode: false
+            , listenMode: false
+            , colorMode: false
+            , imageMode: false
+            , languageMode: 'random'
+            , currentWord: null
+            , optionWords: []
+            , currentQuestionLanguage: ''
+            , selectedOption: null
+            , answered: false
+            , correctAnswers: 0
+            , incorrectAnswers: 0
+            , emptyAnswers: 0
+            , currentQuestionIndex: 0
+            , quizFinished: false
+        };
+
+
+
+        this.categories = Object.keys(wordData);
+        this.words = this.getWordsByCategory(this.state.activeCategory);
+        this.remainingWords = [...this.words];
+
+        this.init();
+    }
+    setSidebarStatus(status) {
+        const left = document.getElementById('leftSidebar');
+        const right = document.getElementById('rightSidebar');
+        if (!left || !right) return;
+
+        left.classList.remove('status-correct', 'status-incorrect');
+        right.classList.remove('status-correct', 'status-incorrect');
+
+        if (status === 'correct') {
+            left.classList.add('status-correct');
+            right.classList.add('status-correct');
+        } else if (status === 'incorrect') {
+            left.classList.add('status-incorrect');
+            right.classList.add('status-incorrect');
+        }
+    }
+
+    lockRightSidebar() {
+        document.getElementById('rightSidebar')
+            .style.pointerEvents = 'none';
+    }
+    unlockRightSidebar() {
+        document.getElementById('rightSidebar')
+            .style.pointerEvents = 'auto';
+    }
+
+
+    clearSidebarStatus() {
+        const left = document.getElementById('leftSidebar');
+        const right = document.getElementById('rightSidebar');
+        if (!left || !right) return;
+
+        left.classList.remove('status-correct', 'status-incorrect');
+        right.classList.remove('status-correct', 'status-incorrect');
+    }
+
+
+    getAllWords() {
+        const allWords = [];
+        for (const category in wordData) {
+            for (const wordKey in wordData[category]) {
+                const word = wordData[category][wordKey];
+                word.category = category;
+                word.id = wordKey;
+                allWords.push(word);
+            }
+        }
+        return allWords;
+    }
+
+    getWordsByCategory(category) {
+        const arr = [];
+        for (const wKey in wordData[category]) {
+            const w = {...wordData[category][wKey]
+                , category
+                , id: wKey
+            };
+            arr.push(w);
+        }
+        return arr;
+    }
+
+    setCategory(category) {
+        this.unlockRightSidebar();
+        this.state.activeCategory = category;
+        this.state.quizFinished = false;
+
+        this.words = this.getWordsByCategory(category);
+        this.remainingWords = [...this.words];
+        this.state.totalQuestions = this.words.length;
+        this.state.currentQuestionIndex =
+            this.state.correctAnswers =
+            this.state.incorrectAnswers =
+            this.state.emptyAnswers = 0;
+
+        this.loadNewQuestion();
+        this.updateStats();
+        this.updateProgress();
+    }
+
+
+
+    init() {
+        this.bindEvents();
+        this.loadNewQuestion();
+        this.updateStats();
+        this.updateProgress();
+
+        setTimeout(() => {
+            const container = document.getElementById('quizContainer');
+            container.classList.add('loaded');
+        }, 200);
+    }
+
+    bindEvents() {
+        document.getElementById('leftExpandBtn')
+            .addEventListener('click', () => {
+                document.getElementById('leftSidebar')
+                    .classList.toggle('expanded');
+            });
+
+        document.getElementById('rightExpandBtn')
+            .addEventListener('click', () => {
+                document.getElementById('rightSidebar')
+                    .classList.toggle('expanded');
+            });
+
+        document.getElementById('writeMode')
+            .addEventListener('click', () => this.toggleWriteMode());
+        document.getElementById('imageMode')
+            .addEventListener('click', () => this.toggleImageMode());
+        document.getElementById('listenMode')
+            .addEventListener('click', () => this.toggleListenMode());
+        document.getElementById('languageMode')
+            .addEventListener('click', () => this.toggleLanguageMode());
+        document.getElementById('colorMode')
+            .addEventListener('click', () => this.toggleColorMode());
+
+        document.getElementById('listenBtn')
+            .addEventListener('click', () => this.playAudio());
+
+        document.getElementById('prevBtn')
+            .addEventListener('click', () => this.prevQuestion());
+        document.getElementById('nextBtn')
+            .addEventListener('click', () => this.nextQuestion());
+
+        document.getElementById('textInput')
+            .addEventListener('input', (e) => {
+                const controls = document.getElementById('textInputControls');
+                if (e.target.value.trim()
+                    .length > 0) {
+                    controls.classList.add('show');
+                } else {
+                    controls.classList.remove('show');
+                }
+            });
+
+        document.getElementById('textSubmitBtn')
+            .addEventListener('click', () => this.submitTextAnswer());
+    }
+
+    toggleWriteMode() {
+        this.state.writeMode = !this.state.writeMode;
+        const writeBtn = document.getElementById('writeMode');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const textInputArea = document.getElementById('textInputArea');
+
+        if (this.state.writeMode) {
+
+            this.state.selectedOption = null;
+            this.state.answered = false;
+            document.querySelectorAll('.option-btn')
+                .forEach(b => b.classList.remove('selected', 'correct', 'incorrect'));
+            this.clearSidebarStatus();
+            this.updateNextButton();
+            document.getElementById('exampleSentence')
+                .classList.remove('show');
+            closeBottomControls();
+
+            const input = document.getElementById('textInput');
+            input.value = '';
+            input.classList.remove('error');
+            document.getElementById('correctAnswer')
+                .style.display = 'none';
+            document.getElementById('textInputControls')
+                .classList.remove('show');
+
+            writeBtn.classList.add('active');
+            optionsContainer.style.display = 'none';
+            textInputArea.style.display = 'block';
+            input.focus();
+        } else {
+            writeBtn.classList.remove('active');
+            optionsContainer.style.display = 'grid';
+            textInputArea.style.display = 'none';
+            document.getElementById('textInputControls')
+                .classList.remove('show');
+        }
+    }
+
+    toggleImageMode() {
+
+
+        if (!this.state.currentWord['görsel url']) {
+            this.state.imageMode = false;
+            document.getElementById('imageMode')
+                .classList.remove('active');
+            return;
+        }
+
+        this.state.imageMode = !this.state.imageMode;
+        const imageBtn = document.getElementById('imageMode');
+        const imagePreview = document.getElementById('imagePreview');
+
+        if (this.state.imageMode) {
+            imageBtn.classList.add('active');
+            imagePreview.classList.add('show', 'has-image');
+            this.updateImage();
+        } else {
+            imageBtn.classList.remove('active');
+            imagePreview.classList.remove('show', 'has-image');
+        }
+    }
+
+    applyImageMode() {
+        const imageBtn = document.getElementById('imageMode');
+        const imagePrev = document.getElementById('imagePreview');
+
+        if (this.state.imageMode && this.state.currentWord['görsel url']) {
+            imageBtn.classList.add('active');
+            imagePrev.classList.add('show', 'has-image');
+            this.updateImage();
+        } else {
+            imageBtn.classList.remove('active');
+            imagePrev.classList.remove('show', 'has-image');
+        }
+    }
+
+
+    toggleListenMode() {
+        this.state.listenMode = !this.state.listenMode;
+        const listenBtn = document.getElementById('listenMode');
+        const headerListenBtn = document.getElementById('listenBtn');
+
+        if (this.state.listenMode) {
+            listenBtn.classList.add('active');
+            headerListenBtn.style.display = 'flex';
+
+            if (this.state.currentWord && this.state.currentWord['ses url']) {
+                this.playAudio();
+            }
+        } else {
+            listenBtn.classList.remove('active');
+            headerListenBtn.style.display = 'none';
+        }
+    }
+
+    toggleLanguageMode() {
+        const languageBtn = document.getElementById('languageMode');
+        const languageText = languageBtn.querySelector('.sidebar-btn-text');
+        const flagImg = languageBtn.querySelector('#languageFlag');
+        const fallbackIcon = languageBtn.querySelector('i');
+
+        if (this.state.languageMode === 'tr') {
+            this.state.languageMode = 'de';
+            languageText.textContent = 'Deutsch';
+        } else if (this.state.languageMode === 'de') {
+            this.state.languageMode = 'random';
+            languageText.textContent = 'Random';
+        } else {
+            this.state.languageMode = 'tr';
+            languageText.textContent = 'Türkçe';
+        }
+
+        switch (this.state.languageMode) {
+        case 'de':
+            flagImg.src = 'https://flagcdn.com/de.svg';
+            flagImg.style.display = 'inline-block';
+            fallbackIcon.style.display = 'none';
+            break;
+        case 'tr':
+            flagImg.src = 'https://flagcdn.com/tr.svg';
+            flagImg.style.display = 'inline-block';
+            fallbackIcon.style.display = 'none';
+            break;
+        default:
+            flagImg.src = '';
+            flagImg.style.display = 'none';
+            fallbackIcon.style.display = 'inline-block';
+        }
+
+
+        this.state.currentQuestionLanguage = (this.state.languageMode === 'random') ?
+            (Math.random() > 0.5 ? 'tr' : 'de') :
+            this.state.languageMode;
+
+        this.state.optionWords = this.getRandomOptions();
+
+        this.state.selectedOption = null;
+        this.state.answered = false;
+        this.clearSidebarStatus();
+        this.updateNextButton();
+
+        this.renderQuestion();
+    }
+
+    toggleColorMode() {
+        this.state.colorMode = !this.state.colorMode;
+        const colorBtn = document.getElementById('colorMode');
+
+        if (this.state.colorMode) {
+            colorBtn.classList.add('active');
+        } else {
+            colorBtn.classList.remove('active');
+        }
+
+        this.renderQuestion();
+        this.restoreAnswerStyles();
+
+    }
+
+    playAudio() {
+        if (this.state.currentWord && this.state.currentWord['ses url']) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = this.state.currentWord['ses url'];
+            audioPlayer.play();
+        }
+    }
+
+    updateImage() {
+        if (this.state.currentWord && this.state.currentWord['görsel url']) {
+            const imagePlaceholder = document.getElementById('imagePlaceholder');
+            imagePlaceholder.innerHTML = `<img src="${this.state.currentWord['görsel url']}" alt="Quiz Image">`;
+        }
+    }
+
+    loadNewQuestion() {
+        this.unlockRightSidebar();
+
+        document.getElementById("textSubmitBtn")
+            .style.display = "block";
+        document.querySelector(".textbolum")
+            .style.display = "flex";
+        document.getElementById("textInput")
+            .readOnly = false;
+        document.getElementById("textInput")
+            .style.userSelect = "auto";
+        document.getElementById("textInput")
+            .style.pointerEvents = "auto";
+        document.getElementById("textInput")
+            .style.cursor = "text";
+        document.getElementById("textInput")
+            .style.border = "1px solid #ffffff61";
+        document.getElementById("textInput")
+            .style.backgroundColor = "auto";
+        this.clearSidebarStatus();
+
+
+
+        if (this.remainingWords.length === 0) {
+            this.remainingWords = [...this.words];
+            this.state.currentQuestionIndex = 0;
+        }
+
+        const rand = Math.floor(Math.random() * this.remainingWords.length);
+        this.state.currentWord = this.remainingWords.splice(rand, 1)[0];
+
+
+
+
+        if (this.state.languageMode === 'random') {
+            this.state.currentQuestionLanguage = Math.random() > 0.5 ? 'tr' : 'de';
+        } else {
+            this.state.currentQuestionLanguage = this.state.languageMode;
+        }
+
+        this.state.optionWords = this.getRandomOptions();
+
+        document.getElementById('writeMode')
+            .style.pointerEvents = 'auto';
+
+
+        this.state.selectedOption = null;
+        this.state.answered = false;
+
+        this.updateImage();
+
+        this.renderQuestion();
+
+        document.getElementById('exampleSentence')
+            .classList.remove('show');
+
+        if (this.state.listenMode && this.state.currentWord['ses url']) {
+            this.playAudio();
+        }
+
+        this.updateImageButton();
+
+        document.getElementById('textInput')
+            .value = '';
+        document.getElementById('textInput')
+            .classList.remove('error');
+        document.getElementById('correctAnswer')
+            .style.display = 'none';
+        document.getElementById('textInputControls')
+            .classList.remove('show');
+
+        this.updateNextButton();
+        closeBottomControls();
+
+    }
+
+    getRandomOptions() {
+        const options = [this.state.currentWord];
+        const otherWords = this.words.filter(word => word !== this.state.currentWord);
+
+        while (options.length < 4 && otherWords.length > 0) {
+            const randomIndex = Math.floor(Math.random() * otherWords.length);
+            options.push(otherWords[randomIndex]);
+            otherWords.splice(randomIndex, 1);
+        }
+
+        return this.shuffleArray(options);
+    }
+
+    shuffleArray(array) {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    }
+
+    updateImageButton() {
+        const imageBtn = document.getElementById('imageMode');
+        const preview = document.getElementById('imagePreview');
+        const hasImage = !!this.state.currentWord['görsel url'];
+
+        imageBtn.style.display = hasImage ? 'flex' : 'none';
+
+        if (hasImage && this.state.imageMode) {
+            preview.classList.add('show', 'has-image');
+            this.updateImage();
+        } else {
+            preview.classList.remove('show', 'has-image');
+        }
+    }
+
+    updateNextButton() {
+        const nextBtn = document.getElementById('nextBtn');
+        if (this.state.answered) {
+            nextBtn.disabled = false;
+        } else {
+            nextBtn.disabled = true;
+        }
+    }
+
+    renderQuestion() {
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+
+        let question;
+        if (this.state.currentQuestionLanguage === 'tr') {
+            question = `"${this.state.currentWord.Türkçe}" kelimesinin Almanca karşılığı nedir?`;
+        } else {
+            let germanWord = this.state.currentWord.Almanca;
+
+            if (this.state.colorMode) {
+                const coloredText = this.state.currentWord['renkli yazı metni'];
+                const color = this.state.currentWord.renk;
+                const regex = new RegExp(coloredText, 'gi');
+                germanWord = germanWord.replace(regex, `<span class="colored-word" style="color:${color}">${coloredText}</span>`);
+            }
+
+            question = `"${germanWord}" kelimesinin Türkçe karşılığı nedir?`;
+        }
+
+        questionText.innerHTML = question;
+
+       
+        optionsContainer.innerHTML = '';
+        const letters = ['A', 'B', 'C', 'D'];
+
+        this.state.optionWords.forEach((word, index) => {
+            const button = document.createElement('button');
+            button.className = 'option-btn';
+            button.innerHTML = `<span class="option-letter">${letters[index]}</span> `;
+
+            let optionText;
+            if (this.state.currentQuestionLanguage === 'tr') {
+                let germanWord = word.Almanca;
+
+                if (this.state.colorMode) {
+                    const coloredText = word['renkli yazı metni'];
+                    const color = word.renk;
+                    const regex = new RegExp(coloredText, 'gi');
+                    germanWord = germanWord.replace(regex, `<span class="colored-word" style="color:${color}">${coloredText}</span>`);
+                }
+
+                optionText = germanWord;
+            } else {
+                optionText = word.Türkçe;
+            }
+
+            button.innerHTML += optionText;
+
+            
+            button.addEventListener('click', () => {
+                if (!this.state.answered) {
+                    this.selectOption(index);
+                }
+            });
+
+            optionsContainer.appendChild(button);
+        });
+
+        this.applyImageMode();
+
+    }
+
+    selectOption(index) {
+        
+        const options = document.querySelectorAll('.option-btn');
+        options.forEach(opt => {
+            opt.classList.remove('selected', 'incorrect', 'correct');
+        });
+
+       
+        options[index].classList.add('selected');
+        this.state.selectedOption = index;
+
+       
+        const selectedWord = this.state.optionWords[index];
+        const isCorrect = selectedWord === this.state.currentWord;
+
+
+        if (isCorrect) {
+            this.state.correctAnswers++;
+            options[index].classList.add('correct');
+            this.setSidebarStatus('correct');
+            playCorrectSound();
+        } else {
+            this.state.incorrectAnswers++;
+            options[index].classList.add('incorrect');
+            this.setSidebarStatus('incorrect');
+            playIncorrectSound();
+            const correctIndex = this.state.optionWords.findIndex(word => word === this.state.currentWord);
+            if (correctIndex !== -1) {
+                options[correctIndex].classList.add('correct');
+            }
+        }
+
+
+        this.state.answered = true;
+        this.lockRightSidebar();
+
+        this.updateStats();
+
+        this.showExampleSentence(isCorrect);
+
+
+        this.updateNextButton();
+        openBottomControls();
+        document.getElementById('writeMode')
+            .style.pointerEvents = 'none';
+
+
+    }
+
+
+    restoreAnswerStyles() {
+        if (!this.state.answered) return; 
+
+        const options = document.querySelectorAll('.option-btn');
+        if (!options.length) return;
+
+        const selIdx = this.state.selectedOption;
+        const correctIdx = this.state.optionWords.findIndex(
+            w => w === this.state.currentWord);
+
+       
+        if (selIdx !== null) {
+            options[selIdx].classList.add('selected');
+        }
+
+        if (selIdx === correctIdx) { 
+            options[selIdx].classList.add('correct');
+            this.setSidebarStatus('correct');
+        } else { 
+            options[selIdx].classList.add('incorrect');
+            if (correctIdx !== -1) options[correctIdx].classList.add('correct');
+            this.setSidebarStatus('incorrect');
+        }
+
+        this.updateNextButton();
+    }
+
+
+    submitTextAnswer() {
+        document.getElementById('writeMode')
+            .style.pointerEvents = 'none';
+
+
+
+        const answer = document.getElementById('textInput')
+            .value.trim()
+            .toLowerCase();
+        const correctAnswer = this.state.currentQuestionLanguage === 'tr' ?
+            this.state.currentWord.Almanca.toLowerCase() :
+            this.state.currentWord.Türkçe.toLowerCase();
+
+        const inputElement = document.getElementById('textInput');
+        const correctAnswerElement = document.getElementById('correctAnswer');
+
+        const isCorrect = (answer === correctAnswer);
+
+        if (answer === correctAnswer) {
+            console.log("doğru");
+            document.getElementById("textSubmitBtn")
+                .style.display = "none";
+            document.querySelector(".textbolum")
+                .style.display = "block";
+            document.getElementById("textInput")
+                .readOnly = true;
+            document.getElementById("textInput")
+                .style.userSelect = "none";
+            document.getElementById("textInput")
+                .style.pointerEvents = "none";
+            document.getElementById("textInput")
+                .style.cursor = "default";
+            document.getElementById("textInput")
+                .style.border = "1px solid rgb(97 205 94)";
+            document.getElementById("textInput")
+                .style.backgroundColor = "rgb(52 98 38 / 55%)";
+
+
+            this.state.correctAnswers++;
+            playCorrectSound();
+            inputElement.classList.remove('error');
+            correctAnswerElement.style.display = 'none';
+        } else {
+            this.state.incorrectAnswers++;
+            inputElement.classList.add('error');
+            playIncorrectSound();
+
+            let answerHTML;
+            if (this.state.currentQuestionLanguage === 'tr') {
+                let german = this.state.currentWord.Almanca;
+                if (this.state.colorMode) {
+                    const tag = this.state.currentWord['renkli yazı metni'];
+                    const color = this.state.currentWord.renk;
+                    const re = new RegExp(tag, 'gi');
+                    german = german.replace(re
+                        , `<span class="colored-word" style="color:${color}">${tag}</span>`);
+                }
+                answerHTML = german;
+            } else { 
+                answerHTML = this.state.currentWord.Türkçe;
+            }
+
+            correctAnswerElement.innerHTML = `Doğru cevap: <strong>${answerHTML}</strong>`;
+            if (answer === correctAnswer) {
+                correctAnswerElement.className = 'correct-answer correct';
+                this.setSidebarStatus('correct');
+
+
+
+            } else {
+                console.log("yanlış");
+                correctAnswerElement.className = 'correct-answer incorrect';
+                this.setSidebarStatus('incorrect');
+
+
+
+            }
+
+            correctAnswerElement.style.display = 'block';
+            document.getElementById("textSubmitBtn")
+                .style.display = "none";
+            document.querySelector(".textbolum")
+                .style.display = "block";
+            document.getElementById("textInput")
+                .readOnly = true;
+            document.getElementById("textInput")
+                .style.userSelect = "none";
+            document.getElementById("textInput")
+                .style.pointerEvents = "none";
+            document.getElementById("textInput")
+                .style.cursor = "default";
+
+        }
+
+        this.state.answered = true;
+        this.lockRightSidebar();
+        this.updateStats();
+        this.showExampleSentence(isCorrect);
+
+        this.updateNextButton();
+        openBottomControls();
+        document.getElementById('writeMode')
+            .style.pointerEvents = 'none';
+
+
+    }
+
+    
+    showExampleSentence(isCorrect) {
+        const box = document.getElementById('exampleSentence');
+
+        box.innerHTML =
+            `<span class="result-message ${isCorrect?'correct':'incorrect'}">
+        ${isCorrect?'DOĞRU':'YANLIŞ'} !
+     </span>`;
+        box.classList.add('show'); 
+
+        
+        setTimeout(() => {
+            box.innerHTML = `<span class="sentence-card">
+                       ${this.state.currentWord['örnek cümle']}
+                     </span>`;
+        }, 1000);
+    }
+
+
+    prevQuestion() {
+        if (this.state.currentQuestionIndex > 0) {
+            this.state.currentQuestionIndex--;
+            this.loadNewQuestion();
+            this.updateProgress();
+        }
+    }
+
+    nextQuestion() {
+        
+        if (this.state.quizFinished) return;
+
+       
+        const input = document.getElementById("textInput");
+        input.style.userSelect = "auto";
+        input.style.pointerEvents = "auto";
+        input.style.cursor = "text";
+        input.style.border = "1px solid #e2e8f03a";
+        input.style.backgroundColor = "#131f2400";
+
+        if (this.state.currentQuestionIndex < this.state.totalQuestions - 1) {
+            this.state.currentQuestionIndex++;
+            this.loadNewQuestion();
+            this.updateProgress();
+        } else {
+            
+            this.showQuizCompleted();
+            this.state.quizFinished = true;
+
+            const nextBtn = document.getElementById('nextBtn');
+            if (nextBtn) nextBtn.disabled = true;
+        }
+    }
+
+    
+    showQuizCompleted(){
+        playFinishSound();
+        const overlay=document.getElementById('quizCompletedOverlay');
+        const black=document.getElementById('blackScreen');
+        black.style.display='flex';
+        black.classList.add('fade');
+        black.addEventListener('animationend',function h(){
+            black.classList.remove('fade');
+            black.style.display='none';
+            black.removeEventListener('animationend',h);
+            overlay.style.display='flex';
+            overlay.classList.add('show');
+            document.getElementById('resultCorrect').textContent=quizApp.state.correctAnswers;
+            document.getElementById('resultIncorrect').textContent=quizApp.state.incorrectAnswers;
+            document.getElementById('resultEmpty').textContent=quizApp.state.emptyAnswers;
+            openBottomControls();
+            kilitCategory();
+            document.querySelectorAll('.category-item.selected').forEach(el=>el.classList.remove('selected'));
+            const topic=document.getElementById('topiclist');
+            topic.style.transition='bottom 0.5s cubic-bezier(0.68,-0.55,0.27,1.55)';
+            topic.style.bottom='-100px';
+            setTimeout(()=>{
+            document.getElementById('categoryPanel').classList.add('show');
+            document.getElementById('categoryOverlay').classList.add('show');
+            },200);
+        });
+    }
+
+
+
+
+
+
+    updateStats() {
+        document.getElementById('correctCount')
+            .textContent = this.state.correctAnswers;
+        document.getElementById('incorrectCount')
+            .textContent = this.state.incorrectAnswers;
+        document.getElementById('emptyCount')
+            .textContent = this.state.emptyAnswers;
+    }
+
+    updateProgress() {
+        const progress = (this.state.currentQuestionIndex + 1) / this.state.totalQuestions * 100;
+        document.getElementById('progressBar')
+            .style.width = `${progress}%`;
+        document.getElementById('questionCounter')
+            .textContent = `${this.state.currentQuestionIndex + 1}/${this.state.totalQuestions}`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new QuizApp();
+    window.quizApp = app;
+
+});
+
+let allWordsForTable = [];
+let filteredWords = [];
+
+function initializeWordList() {
+    allWordsForTable = [];
+
+    const app = window.quizApp;
+    const activeCategory = app && app.state ? app.state.activeCategory : null;
+
+    const categories = activeCategory ? [activeCategory] : Object.keys(wordData);
+
+    categories.forEach(cat => {
+        const wordsOfCat = wordData[cat] || {};
+        for (const key in wordsOfCat) {
+            const w = wordsOfCat[key];
+            allWordsForTable.push({
+                german: w.Almanca
+                , turkish: w.Türkçe
+                , type: w['kelime türü']
+                , example: w['örnek cümle']
+                , category: cat
+            });
+        }
+    });
+
+    filteredWords = [...allWordsForTable];
+}
+
+
+function openWordListModal() {
+    initializeWordList();
+    displayWordsInTable();
+    document.getElementById('wordListModal')
+        .classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeWordListModal() {
+    document.getElementById('wordListModal')
+        .classList.remove('show');
+    document.body.style.overflow = 'auto';
+    document.getElementById('wordSearchInput')
+        .value = '';
+}
+
+function displayWordsInTable() {
+    const list = document.getElementById('wordsList');
+    list.innerHTML = '';
+
+    const colorModeActive = document.getElementById('colorMode')
+        .classList.contains('active');
+
+    filteredWords.forEach(word => {
+        const row = document.createElement('div');
+        row.className = 'word-row';
+
+        let germanWord = word.german;
+        if (colorModeActive) {
+            const original = findOriginalWordData(word.german, word.turkish);
+            if (original && original['renkli yazı metni'] && original.renk) {
+                const txt = original['renkli yazı metni'];
+                const clr = original.renk;
+                germanWord = germanWord.replace(
+                    new RegExp(txt, 'gi')
+                    , `<span style="color:${clr};font-weight:bold;
+                         background:rgba(${hexToRgb(clr)},.1);
+                         padding:2px 4px;border-radius:4px;">${txt}</span>`
+                );
+            }
+        }
+
+        
+        const original = findOriginalWordData(word.german, word.turkish);
+        const hasAudio = original && original['ses url'] ?.trim() !== '';
+        const audioURL = hasAudio ? original['ses url'] : '';
+
+        row.innerHTML = `
+      <span class="german-word">${germanWord}</span>
+      <span class="turkish-word">${word.turkish}</span>
+      <span class="word-type-tag">${word.type}</span>
+      
+    `;
+
+        list.appendChild(row);
+    });
+}
+
+function findOriginalWordData(german, turkish) {
+    for (const category in wordData) {
+        for (const wordKey in wordData[category]) {
+            const word = wordData[category][wordKey];
+            if (word.Almanca === german && word.Türkçe === turkish) {
+                return word;
+            }
+        }
+    }
+    return null;
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ?
+        parseInt(result[1], 16) + ',' + parseInt(result[2], 16) + ',' + parseInt(result[3], 16) :
+        '0,0,0';
+}
+
+function searchInWordList() {
+    const searchTerm = document.getElementById('wordSearchInput')
+        .value.toLowerCase()
+        .trim();
+
+    if (searchTerm === '') {
+        filteredWords = [...allWordsForTable];
+    } else {
+        filteredWords = allWordsForTable.filter(word =>
+            word.german.toLowerCase()
+            .includes(searchTerm) ||
+            word.turkish.toLowerCase()
+            .includes(searchTerm) ||
+            word.category.toLowerCase()
+            .includes(searchTerm) ||
+            word.type.toLowerCase()
+            .includes(searchTerm) ||
+            word.example.toLowerCase()
+            .includes(searchTerm)
+        );
+    }
+
+    displayWordsInTable();
+}
+
+function clearWordSearch() {
+    document.getElementById('wordSearchInput')
+        .value = '';
+    filteredWords = [...allWordsForTable];
+    displayWordsInTable();
+}
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.getElementById('downloadPdfBtn')
+        .addEventListener('click', downloadTableAsPDF);
+    document.querySelector('.close-modal')
+        .addEventListener('click', closeWordListModal);
+
+
+
+    document.getElementById('wordSearchInput')
+        .addEventListener('input', searchInWordList);
+
+    document.getElementById('clearSearch')
+        .addEventListener('click', clearWordSearch);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeWordListModal();
+        }
+    });
+
+    document.getElementById('wordListBtn')
+        .addEventListener('click', openWordListModal);
+});
+
+function playWordAudio(audioUrl) {
+    if (!audioUrl || audioUrl.trim() === '') {
+        console.log('Ses URL\'si bulunamadı');
+        return;
+    }
+
+    const audioPlayer = document.getElementById('audioPlayer');
+    audioPlayer.src = audioUrl;
+    audioPlayer.play()
+        .catch(error => {
+            console.error('Ses çalma hatası:', error);
+            alert('Ses dosyası çalınamadı.');
+        });
+}
+
+function downloadTableAsPDF() {
+    if (typeof window.jsPDF === 'undefined') {
+        loadJsPDFAndDownload();
+        return;
+    }
+
+    const {
+        jsPDF
+    } = window.jsPDF;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text('Almanca-Türkçe Kelime Listesi', 20, 20);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const today = new Date()
+        .toLocaleDateString('tr-TR');
+    doc.text(`Oluşturulma Tarihi: ${today}`, 20, 30);
+
+    const tableData = filteredWords.map(word => [
+        word.german.replace(/<[^>]*>/g, '')
+        , word.turkish
+        , word.type
+        , word.example
+    ]);
+
+    const headers = [['Almanca', 'Türkçe', 'Tür', 'Örnek Cümle']];
+
+    doc.autoTable({
+        head: headers
+        , body: tableData
+        , startY: 40
+        , styles: {
+            fontSize: 9
+            , cellPadding: 3
+        , }
+        , headStyles: {
+            fillColor: [30, 42, 63]
+            , textColor: 255
+            , fontStyle: 'bold'
+        }
+        , alternateRowStyles: {
+            fillColor: [248, 250, 252]
+        }
+        , columnStyles: {
+            0: {
+                cellWidth: 40
+            }
+            , 1: {
+                cellWidth: 40
+            }
+            , 2: {
+                cellWidth: 25
+            }
+            , 3: {
+                cellWidth: 80
+            }
+        }
+        , margin: {
+            top: 40
+            , right: 20
+            , bottom: 20
+            , left: 20
+        }
+    , });
+
+    doc.save(`kelime-listesi-${today}.pdf`);
+}
+
+function loadJsPDFAndDownload() {
+    const jsPDFScript = document.createElement('script');
+    jsPDFScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+    const autoTableScript = document.createElement('script');
+    autoTableScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+
+    jsPDFScript.onload = function () {
+        autoTableScript.onload = function () {
+            downloadTableAsPDF();
+        };
+        document.head.appendChild(autoTableScript);
+    };
+
+    document.head.appendChild(jsPDFScript);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const topiclist = document.getElementById('topiclist');
+    let isDragging = false;
+    let startY = 0;
+    let horLock = false;
+    const Y_TOLERANS = 10;
+
+    const VERTICAL_THRESHOLD = 15;
+    let currentZoom = 76;
+    let longPressTimer;
+    const longPressDuration = 200;
+
+    topiclist.style.cssText = `
+        position: fixed;
+        bottom: 1%;
+        width: 120px;
+        background-color: white;
+        height: 1.5%;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.1);
+        z-index: 1000;
+        left: 50%;
+        transform: translateX(-50%) scale(${1/(currentZoom/100)});
+    `;
+
+    const zoomUI = document.createElement('div');
+    zoomUI.id = 'zoom-control-ui';
+    zoomUI.style.cssText = `
+        position: fixed;
+        bottom: 6%;
+        left: 50%;
+        transform: translateX(-50%) scale(${1/(currentZoom/100)});
+        background: #1c1c1cbf;
+        color: white;
+        padding: 20px 30px;
+        border-radius: 10px;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        z-index: 1000;
+        display: none;
+        backdrop-filter: blur(1px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        opacity: 0;
+        transform-origin: center bottom;
+    `;
+    zoomUI.innerHTML = `
+        <span id="zoom-value">${currentZoom}%</span>
+    `;
+    document.body.appendChild(zoomUI);
+
+    
+    topiclist.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+
+        longPressTimer = setTimeout(() => {
+            startDrag(e.clientX, e.clientY);
+        }, longPressDuration);
+    });
+
+    topiclist.addEventListener('touchstart', function (e) {
+        longPressTimer = setTimeout(() => {
+            startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }, longPressDuration);
+    });
+
+    function startDrag(clientX, clientY) {
+        isDragging = true;
+        startX = clientX;
+        startY = clientY;
+        horLock = false;
+
+        
+        const inverseScale = 1 / (currentZoom / 100);
+        topiclist.style.transform = `translateX(-50%) scaleX(${1.3*inverseScale})`;
+        topiclist.style.backgroundColor = 'rgba(240,240,240,0.9)';
+        topiclist.style.cursor = 'ew-resize';
+        topiclist.style.boxShadow = 'rgb(0 0 0 / 81%) 0px 2px 10px';
+
+        
+        zoomUI.style.display = 'block';
+        setTimeout(() => {
+            zoomUI.style.opacity = '1';
+            zoomUI.style.transform = `translateX(-50%) scale(${inverseScale})`;
+        }, 10);
+    }
+
+    document.addEventListener('mousemove', e => handlePointer(e.clientX, e.clientY));
+    document.addEventListener('touchmove', e => {
+        const t = e.touches[0];
+        handlePointer(t.clientX, t.clientY);
+        e.preventDefault();
+    });
+
+    function handlePointer(px, py) {
+        if (!isDragging) return;
+
+        const dx = px - startX; 
+        const dy = py - startY; 
+
+        
+        if (Math.abs(dy) > Y_TOLERANS) {
+            endDrag();
+            return;
+        }
+
+        
+        const zoomChange = dx * 0.3;
+        currentZoom = Math.max(30, Math.min(200, currentZoom + zoomChange));
+        document.documentElement.style.zoom = currentZoom + '%';
+        document.getElementById('zoom-value')
+            .textContent =
+            `${Math.round(currentZoom)}%`;
+
+        const inv = 1 / (currentZoom / 100);
+        topiclist.style.transform = `translateX(-50%) scaleX(${1.3 * inv})`;
+        zoomUI.style.transform = `translateX(-50%) scale(${inv})`;
+
+        
+        startX = px;
+    }
+
+    
+    document.addEventListener('mousemove', e => handlePointer(e.clientX, e.clientY));
+    document.addEventListener('touchmove', e => {
+        const t = e.touches[0];
+        handlePointer(t.clientX, t.clientY);
+        e.preventDefault(); 
+    });
+
+
+    document.addEventListener('mousemove', e => handlePointer(e.clientX, e.clientY));
+    document.addEventListener('touchmove', e => {
+        const t = e.touches[0];
+        handlePointer(t.clientX, t.clientY);
+        e.preventDefault();
+    });
+
+
+    document.addEventListener('touchmove', function (e) {
+        if (!isDragging) return;
+
+        const deltaX = e.touches[0].clientX - startX;
+        const deltaY = e.touches[0].clientY - startY;
+        if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+        const zoomChange = deltaX * 0.3;
+
+        currentZoom = Math.max(30, Math.min(200, currentZoom + zoomChange));
+        document.documentElement.style.zoom = currentZoom + '%';
+        document.getElementById('zoom-value')
+            .textContent = `${Math.round(currentZoom)}%`;
+
+        const inverseScale = 1 / (currentZoom / 100);
+        topiclist.style.transform = `translateX(-50%) scaleX(${1.3*inverseScale})`;
+        zoomUI.style.transform = `translateX(-50%) scale(${inverseScale})`;
+
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY; 
+        e.preventDefault();
+        e.preventDefault();
+    });
+
+    
+    function endDrag() {
+        clearTimeout(longPressTimer);
+        if (!isDragging) return;
+
+        isDragging = false;
+
+        
+        const inverseScale = 1 / (currentZoom / 100);
+        topiclist.style.transform = `translateX(-50%) scale(${inverseScale})`;
+        topiclist.style.backgroundColor = 'white';
+        topiclist.style.cursor = 'pointer';
+        topiclist.style.boxShadow = 'rgb(0 0 0 / 81%) 0px 2px 10px';
+
+        
+        zoomUI.style.opacity = '0';
+        zoomUI.style.transform = `translateX(-50%) scale(${inverseScale})`;
+        setTimeout(() => {
+            zoomUI.style.display = 'none';
+        }, 300);
+    }
+
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('mouseleave', endDrag);
+
+    
+    topiclist.addEventListener('mouseenter', function () {
+        if (!isDragging) {
+            const inverseScale = 1 / (currentZoom / 100);
+            topiclist.style.transform = `translateX(-50%) scale(${1.05*inverseScale})`;
+            topiclist.style.boxShadow = 'rgb(0 0 0 / 81%) 0px 2px 10px';
+        }
+    });
+
+    topiclist.addEventListener('mouseleave', function () {
+        if (!isDragging) {
+            const inverseScale = 1 / (currentZoom / 100);
+            topiclist.style.transform = `translateX(-50%) scale(${inverseScale})`;
+            topiclist.style.boxShadow = 'rgb(0 0 0 / 81%) 0px 2px 10px';
+        }
+    });
+
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        #topiclist {
+            user-select: none;
+            touch-action: none;
+            will-change: transform, background-color;
+            transform-origin: center bottom;
+            user-select: none;
+  touch-action: pan-x;
+        }
+        
+        #zoom-control-ui {
+            will-change: transform, opacity;
+            transform-origin: center bottom;
+        }
+        
+        @media (max-width: 768px) {
+            #topiclist {
+                width: 100px;
+                height: 12px;
+            }
+            
+            #zoom-control-ui {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+
+
+
+class TextToSpeechManager {
+    constructor() {
+        this.synth = window.speechSynthesis;
+        this.voices = [];
+        this.germanVoice = null;
+        this.turkishVoice = null;
+        this.isInitialized = false;
+
+        this.init();
+    }
+
+    init() {
+        
+        if (this.synth.getVoices()
+            .length === 0) {
+            this.synth.addEventListener('voiceschanged', () => {
+                this.loadVoices();
+            });
+        } else {
+            this.loadVoices();
+        }
+    }
+
+    loadVoices() {
+        this.voices = this.synth.getVoices();
+
+        
+        this.germanVoice = this.voices.find(voice =>
+            voice.lang.startsWith('de-') ||
+            voice.lang === 'de' ||
+            voice.name.toLowerCase()
+            .includes('german') ||
+            voice.name.toLowerCase()
+            .includes('deutsch')
+        );
+
+        
+        this.turkishVoice = this.voices.find(voice =>
+            voice.lang.startsWith('tr-') ||
+            voice.lang === 'tr' ||
+            voice.name.toLowerCase()
+            .includes('turkish') ||
+            voice.name.toLowerCase()
+            .includes('türkçe')
+        );
+
+        
+        if (!this.germanVoice) {
+            this.germanVoice = this.voices.find(voice => voice.lang.includes('en')) || this.voices[0];
+        }
+
+        if (!this.turkishVoice) {
+            this.turkishVoice = this.voices.find(voice => voice.lang.includes('en')) || this.voices[0];
+        }
+
+        this.isInitialized = true;
+        console.log('TTS Initialized:', {
+            germanVoice: this.germanVoice ?.name || 'Not found'
+            , turkishVoice: this.turkishVoice ?.name || 'Not found'
+        });
+    }
+
+    speak(text, language = 'auto') {
+        if (!this.isInitialized) {
+            console.warn('TTS not initialized yet');
+            return;
+        }
+
+        
+        this.synth.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+
+        
+        if (language === 'de') {
+            utterance.voice = this.germanVoice;
+            utterance.lang = this.germanVoice ?.lang || 'de-DE';
+            utterance.rate = 0.8; 
+        } else if (language === 'tr') {
+            utterance.voice = this.turkishVoice;
+            utterance.lang = this.turkishVoice ?.lang || 'tr-TR';
+            utterance.rate = 0.9; 
+        }
+
+        
+        utterance.volume = 1;
+        utterance.pitch = 1;
+
+        
+        utterance.onerror = (event) => {
+            console.error('TTS Error:', event.error);
+        };
+
+        utterance.onstart = () => {
+            console.log('TTS Started:', text, 'Language:', language);
+        };
+
+        this.synth.speak(utterance);
+    }
+
+    stop() {
+        this.synth.cancel();
+    }
+}
+
+
+const ttsManager = new TextToSpeechManager();
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    let originalPlayAudio = null;
+
+    
+    const waitForQuizApp = setInterval(() => {
+        
+        if (typeof window !== 'undefined' && document.getElementById('listenBtn')) {
+
+            
+            window.playCurrentQuestionAudio = function () {
+                
+                const questionText = document.getElementById('questionText')
+                    .textContent;
+
+                
+                let wordToSpeak = '';
+                let language = '';
+
+                if (questionText.includes('Türkçe karşılığı nedir')) {
+                    
+                    const match = questionText.match(/"([^"]+)"/);
+                    if (match) {
+                        wordToSpeak = match[1];
+                        language = 'de';
+                    }
+                } else if (questionText.includes('Almanca karşılığı nedir')) {
+                    
+                    const match = questionText.match(/"([^"]+)"/);
+                    if (match) {
+                        wordToSpeak = match[1];
+                        language = 'tr';
+                    }
+                }
+
+                if (wordToSpeak && language) {
+                    console.log('Okutulacak kelime:', wordToSpeak, 'Dil:', language);
+                    ttsManager.speak(wordToSpeak, language);
+                } else {
+                    console.warn('Okutulacak kelime bulunamadı');
+                }
+            };
+
+           
+            const listenBtn = document.getElementById('listenBtn');
+            if (listenBtn) {
+                
+                listenBtn.replaceWith(listenBtn.cloneNode(true));
+                const newListenBtn = document.getElementById('listenBtn');
+
+                newListenBtn.addEventListener('click', function () {
+                    window.playCurrentQuestionAudio();
+                });
+            }
+
+            clearInterval(waitForQuizApp);
+        }
+    }, 100);
+});
+
+
+setTimeout(() => {
+    if (typeof window.app !== 'undefined' && window.app.playAudio) {
+        window.app.playAudio = function () {
+            window.playCurrentQuestionAudio();
+        };
+    }
+}, 1000);
+
+
+function playWordAudioWithTTS(audioUrl, germanWord, turkishWord) {
+    if (audioUrl && audioUrl.trim() !== '') {
+        
+        const audioPlayer = document.getElementById('audioPlayer');
+        audioPlayer.src = audioUrl;
+        audioPlayer.play()
+            .catch(error => {
+                console.error('Ses çalma hatası, TTS kullanılıyor:', error);
+                
+                ttsManager.speak(germanWord, 'de');
+            });
+    } else {
+        
+        ttsManager.speak(germanWord, 'de');
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    
+    setTimeout(() => {
+        if (typeof window.displayWordsInTable === 'function') {
+            const originalDisplayWordsInTable = window.displayWordsInTable;
+
+            window.displayWordsInTable = function () {
+                originalDisplayWordsInTable();
+
+                
+                const tableBody = document.getElementById('wordsTableBody');
+                if (tableBody) {
+                    const rows = tableBody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const listenBtn = row.querySelector('.listen-btn');
+                        if (listenBtn && filteredWords[index]) {
+                            const word = filteredWords[index];
+                            const originalWord = findOriginalWordData(word.german, word.turkish);
+                            const audioUrl = originalWord ? originalWord['ses url'] : '';
+
+                            
+                            listenBtn.innerHTML = `
+                                <i class="fas fa-volume-up"></i>
+                                Dinle
+                            `;
+                            listenBtn.disabled = false;
+
+                            listenBtn.onclick = () => playWordAudioWithTTS(audioUrl, word.german, word.turkish);
+                        }
+                    });
+                }
+            };
+        }
+    }, 2000);
+});
+
+window.ttsControls = {
+    stop: () => ttsManager.stop(),
+
+    speak: (text, language = 'auto') => ttsManager.speak(text, language),
+
+    speakCurrentQuestion: () => window.playCurrentQuestionAudio(),
+
+    isSupported: () => 'speechSynthesis' in window,
+
+    testGermanVoice: () => ttsManager.speak('der Apfel', 'de')
+    , testTurkishVoice: () => ttsManager.speak('elma', 'tr')
+};
+
+if (!('speechSynthesis' in window)) {
+    console.warn('⚠️ Bu tarayıcı Text-to-Speech API\'sini desteklemiyor');
+
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #ff6b6b;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    `;
+    notification.textContent = 'Tarayıcınız sesli okuma özelliğini desteklemiyor';
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.style.opacity = '1', 100);
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
+
+
+
+class EnhancedListenUI {
+    constructor() {
+        this.isPlaying = false;
+        this.currentPlayingButton = null;
+        this.optionListenButtons = [];
+
+        this.init();
+    }
+
+    init() {
+        this.setupMainListenButton();
+        this.setupOptionListenButtons();
+        this.setupSpeechEvents();
+        this.addCustomStyles();
+
+        this.observeQuestionChanges();
+    }
+
+    isListenModeActive() {
+        const listenModeBtn = document.getElementById('listenMode');
+        return listenModeBtn && listenModeBtn.classList.contains('active');
+    }
+
+    setupMainListenButton() {
+        const listenBtn = document.getElementById('listenBtn');
+        if (listenBtn) {
+            listenBtn.replaceWith(listenBtn.cloneNode(true));
+            const newListenBtn = document.getElementById('listenBtn');
+
+            newListenBtn.addEventListener('click', () => {
+                if (this.isListenModeActive()) {
+                    this.handleMainListenClick(newListenBtn);
+                } else {
+                    this.showListenModeWarning();
+                }
+            });
+        }
+    }
+
+    showListenModeWarning() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff6b6b;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        `;
+        notification.innerHTML = `
+            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+            Dinleme özelliğini kullanmak için önce dinleme modunu aktif edin!
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => notification.style.opacity = '1', 100);
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    
+    handleMainListenClick(button) {
+        if (this.isPlaying) {
+            this.stopAllAudio();
+            this.resetMainButton(button);
+        } else {
+            this.setMainButtonPlaying(button);
+            this.playCurrentQuestion();
+        }
+    }
+
+    
+    setupOptionListenButtons() {
+        setTimeout(() => {
+            this.createOptionListenButtons();
+        }, 500);
+    }
+
+    
+    createOptionListenButtons() {
+        
+        if (!this.isListenModeActive()) {
+            return;
+        }
+
+        const optionsContainer = document.getElementById('optionsContainer');
+        if (!optionsContainer) return;
+
+        const optionBtns = optionsContainer.querySelectorAll('.option-btn');
+
+        optionBtns.forEach((optionBtn, index) => {
+            
+            const existingListenBtn = optionBtn.querySelector('.option-listen-btn');
+            if (existingListenBtn) {
+                existingListenBtn.remove();
+            }
+
+            
+            const listenBtn = document.createElement('button');
+            listenBtn.className = 'option-listen-btn';
+            listenBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            listenBtn.title = 'Bu şıkkı dinle';
+
+            
+            listenBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.handleOptionListenClick(listenBtn, index);
+            });
+
+            optionBtn.style.position = 'relative';
+            optionBtn.appendChild(listenBtn);
+        });
+    }
+
+    handleOptionListenClick(button, optionIndex) {
+        if (this.isPlaying && this.currentPlayingButton === button) {
+            this.stopAllAudio();
+            this.resetButton(button);
+        } else {
+            this.stopAllAudio();
+            this.setButtonPlaying(button);
+            this.playOptionText(optionIndex);
+        }
+    }
+
+
+    handleCorrectAnswerListenClick(button) {
+        if (this.isPlaying && this.currentPlayingButton === button) {
+            this.stopAllAudio();
+            this.resetButton(button);
+        } else {
+            this.stopAllAudio();
+            this.setButtonPlaying(button);
+            this.playCorrectAnswer();
+        }
+    }
+
+    playCorrectAnswer() {
+        const questionText = document.getElementById('questionText')
+            .textContent;
+
+        let correctAnswerText = '';
+        let language = '';
+
+        if (questionText.includes('Türkçe karşılığı nedir')) {
+            if (typeof app !== 'undefined' && app.state && app.state.currentWord) {
+                correctAnswerText = app.state.currentWord.Türkçe;
+                language = 'tr';
+            }
+        } else if (questionText.includes('Almanca karşılığı nedir')) {
+            if (typeof app !== 'undefined' && app.state && app.state.currentWord) {
+                correctAnswerText = app.state.currentWord.Almanca;
+                language = 'de';
+            }
+        }
+
+        if (correctAnswerText && language) {
+            if (typeof window.ttsManager !== 'undefined') {
+                window.ttsManager.speak(correctAnswerText, language);
+            } else if (typeof ttsManager !== 'undefined') {
+                ttsManager.speak(correctAnswerText, language);
+            }
+        }
+    }
+
+    playCurrentQuestion() {
+        if (typeof window.playCurrentQuestionAudio === 'function') {
+            window.playCurrentQuestionAudio();
+        } else {
+            console.warn('playCurrentQuestionAudio fonksiyonu bulunamadı');
+        }
+    }
+
+    playOptionText(optionIndex) {
+        const optionBtns = document.querySelectorAll('.option-btn');
+        if (optionBtns[optionIndex]) {
+            const optionText = optionBtns[optionIndex].textContent.trim();
+            const cleanText = optionText.replace(/^[A-D]\s+/, '');
+
+            const language = this.detectLanguage(cleanText);
+
+            if (typeof window.ttsManager !== 'undefined') {
+                window.ttsManager.speak(cleanText, language);
+            } else if (typeof ttsManager !== 'undefined') {
+                ttsManager.speak(cleanText, language);
+            } else {
+                console.warn('TTS Manager bulunamadı');
+            }
+        }
+    }
+
+    detectLanguage(text) {
+        const germanIndicators = ['der ', 'die ', 'das ', 'ein ', 'eine ', 'ü', 'ö', 'ä', 'ß'];
+        const turkishIndicators = ['ı', 'ğ', 'ş', 'ç', 'ü', 'ö'];
+
+        const lowerText = text.toLowerCase();
+
+        const germanScore = germanIndicators.filter(indicator => lowerText.includes(indicator))
+            .length;
+        const turkishScore = turkishIndicators.filter(indicator => lowerText.includes(indicator))
+            .length;
+
+        return germanScore > turkishScore ? 'de' : 'tr';
+    }
+
+    setMainButtonPlaying(button) {
+        this.isPlaying = true;
+        this.currentPlayingButton = button;
+
+        button.innerHTML = `
+            <i class="fas fa-stop"></i>
+            <span>Dinleniyor...</span>
+        `;
+        button.classList.add('playing');
+    }
+
+    setButtonPlaying(button) {
+        this.isPlaying = true;
+        this.currentPlayingButton = button;
+
+        button.innerHTML = '<i class="fas fa-stop"></i>';
+        button.classList.add('playing');
+    }
+
+    resetMainButton(button) {
+        this.isPlaying = false;
+        this.currentPlayingButton = null;
+
+        button.innerHTML = `
+            <i class="fas fa-volume-up"></i>
+            <span>Dinle</span>
+        `;
+        button.classList.remove('playing');
+    }
+
+    resetButton(button) {
+        this.isPlaying = false;
+        this.currentPlayingButton = null;
+
+        button.innerHTML = '<i class="fas fa-volume-up"></i>';
+        button.classList.remove('playing');
+    }
+
+    stopAllAudio() {
+        if (typeof ttsManager !== 'undefined') {
+            ttsManager.stop();
+        }
+
+        const audioPlayer = document.getElementById('audioPlayer');
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        }
+    }
+
+    setupSpeechEvents() {
+        if ('speechSynthesis' in window) {
+            const checkSpeechEnd = () => {
+                if (!window.speechSynthesis.speaking && this.isPlaying) {
+                    this.handleSpeechEnd();
+                }
+            };
+
+            setInterval(checkSpeechEnd, 100);
+        }
+    }
+
+    handleSpeechEnd() {
+        if (this.currentPlayingButton) {
+            if (this.currentPlayingButton.id === 'listenBtn') {
+                this.resetMainButton(this.currentPlayingButton);
+            } else {
+                this.resetButton(this.currentPlayingButton);
+            }
+        }
+    }
+
+    observeQuestionChanges() {
+        const questionText = document.getElementById('questionText');
+        if (questionText) {
+            const observer = new MutationObserver(() => {
+                setTimeout(() => {
+                    this.createOptionListenButtons();
+                }, 100);
+            });
+
+            observer.observe(questionText, {
+                childList: true
+                , subtree: true
+                , characterData: true
+            });
+        }
+
+
+    }
+
+    addCustomStyles() {
+        const styleId = 'enhanced-listen-ui-styles';
+        if (document.getElementById(styleId)) return;
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            #listenBtn.playing {
+                background: #dc3545 !important;
+                color: white !important;
+                animation: pulse 1.5s infinite;
+            }
+            
+            
+            
+            .option-listen-btn {
+                position: absolute !important;
+                top: 8px !important;
+                right: 8px !important;
+                background: rgba(255, 255, 255, 0.9) !important;
+                border: 1px solid var(--gray-300) !important;
+                border-radius: 50% !important;
+                width: 32px !important;
+                height: 32px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                cursor: pointer !important;
+                font-size: 12px !important;
+                color: var(--gray-600) !important;
+                transition: all 0.2s ease !important;
+                z-index: 10 !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            }
+            
+            
+            
+            .option-listen-btn.playing {
+                background: #dc3545 !important;
+                color: white !important;
+                animation: pulse 1.5s infinite !important;
+            }
+            
+            
+            
+            
+            
+            
+            
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+                }
+                70% {
+                    box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+                }
+            }
+            
+            .option-btn {
+                padding-right: 50px !important;
+            }
+            
+            @media (max-width: 768px) {
+                .option-listen-btn {
+                    width: 28px !important;
+                    height: 28px !important;
+                    font-size: 11px !important;
+                    top: 6px !important;
+                    right: 6px !important;
+                }
+                
+                .option-btn {
+                    padding-right: 45px !important;
+                }
+                
+                
+            }
+            
+            .words-table .listen-btn.playing {
+                background: #dc3545 !important;
+                color: white !important;
+                animation: pulse 1.5s infinite !important;
+            }
+            
+            
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    forceStop() {
+        this.stopAllAudio();
+        if (this.currentPlayingButton) {
+            if (this.currentPlayingButton.id === 'listenBtn') {
+                this.resetMainButton(this.currentPlayingButton);
+            } else {
+                this.resetButton(this.currentPlayingButton);
+            }
+        }
+    }
+
+    isCurrentlyPlaying() {
+        return this.isPlaying;
+    }
+
+    onListenModeToggle() {
+        setTimeout(() => {
+            this.createOptionListenButtons();
+        }, 100);
+    }
+}
+
+let enhancedListenUI;
+
+document.addEventListener('DOMContentLoaded', function () {
+    const waitForTTS = setInterval(() => {
+        if (typeof ttsManager !== 'undefined' || typeof window.ttsManager !== 'undefined') {
+            enhancedListenUI = new EnhancedListenUI();
+            clearInterval(waitForTTS);
+        }
+    }, 100);
+
+    setTimeout(() => {
+        if (!enhancedListenUI) {
+            enhancedListenUI = new EnhancedListenUI();
+        }
+    }, 5000);
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const listenModeBtn = document.getElementById('listenMode');
+    if (listenModeBtn) {
+        listenModeBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                if (enhancedListenUI) {
+                    enhancedListenUI.onListenModeToggle();
+                }
+            }, 100);
+        });
+    }
+});
+
+function enhanceWordListButtons() {
+    const wordListModal = document.getElementById('wordListModal');
+    if (!wordListModal) return;
+
+    const listenButtons = wordListModal.querySelectorAll('.listen-btn');
+
+    listenButtons.forEach((btn, index) => {
+        const originalOnclick = btn.onclick;
+
+        btn.onclick = function () {
+            const playingBtn = wordListModal.querySelector('.listen-btn.playing');
+            if (playingBtn && playingBtn !== btn) {
+                playingBtn.classList.remove('playing');
+                playingBtn.innerHTML = `
+                    <i class="fas fa-volume-up"></i>
+                    Dinle
+                `;
+            }
+
+            // Bu butonun durumunu değiştir
+            if (btn.classList.contains('playing')) {
+                // Durdur
+                btn.classList.remove('playing');
+                btn.innerHTML = `
+                    <i class="fas fa-volume-up"></i>
+                    Dinle
+                `;
+                if (typeof ttsManager !== 'undefined') {
+                    ttsManager.stop();
+                }
+            } else {
+                btn.classList.add('playing');
+                btn.innerHTML = `
+                    <i class="fas fa-stop"></i>
+                    Dinleniyor...
+                `;
+
+                if (originalOnclick) {
+                    originalOnclick();
+                }
+
+                // Ses bittiğinde butonu sıfırla
+                setTimeout(() => {
+                    const checkEnd = setInterval(() => {
+                        if (!window.speechSynthesis.speaking) {
+                            btn.classList.remove('playing');
+                            btn.innerHTML = `
+                                <i class="fas fa-volume-up"></i>
+                                Dinle
+                            `;
+                            clearInterval(checkEnd);
+                        }
+                    }, 100);
+                }, 500);
+            }
+        };
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const originalOpenModal = window.openWordListModal;
+    if (originalOpenModal) {
+        window.openWordListModal = function () {
+            originalOpenModal();
+            setTimeout(() => {
+                enhanceWordListButtons();
+            }, 100);
+        };
+    }
+});
+
+window.enhancedListenControls = {
+    stopAll: () => {
+        if (enhancedListenUI) {
+            enhancedListenUI.forceStop();
+        }
+    },
+
+    isPlaying: () => {
+        return enhancedListenUI ? enhancedListenUI.isCurrentlyPlaying() : false;
+    },
+
+    refreshOptionButtons: () => {
+        if (enhancedListenUI) {
+            enhancedListenUI.createOptionListenButtons();
+        }
+    }
+};
+
+(() => {
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    const ttsManager = {
+        speaking: false
+        , currentUtter: null
+        , voicesReady: false
+        , voices: []
+        , _keepAliveTimer: null,
+
+        async ensureVoices(timeoutMs = 2000) {
+            const have = window.speechSynthesis.getVoices();
+            if (have && have.length) {
+                this.voices = have;
+                this.voicesReady = true;
+                return;
+            }
+            await new Promise((resolve) => {
+                let done = false;
+                const finish = () => {
+                    if (!done) {
+                        done = true;
+                        resolve();
+                    }
+                };
+                const onVoices = () => {
+                    window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+                    this.voices = window.speechSynthesis.getVoices() || [];
+                    this.voicesReady = this.voices.length > 0;
+                    finish();
+                };
+                window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+                setTimeout(() => {
+                    window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+                    this.voices = window.speechSynthesis.getVoices() || [];
+                    this.voicesReady = this.voices.length > 0;
+                    finish();
+                }, timeoutMs);
+            });
+        },
+
+        pickVoice(lang) {
+            const vs = this.voices || [];
+            if (!vs.length) return null;
+            const want = (lang === 'de' ? 'de-DE' : 'tr-TR');
+            const exact = vs.find(v => v.lang === want);
+            if (exact) return exact;
+            const base = want.split('-')[0];
+            return vs.find(v => (v.lang || '')
+                .toLowerCase()
+                .startsWith(base)) || null;
+        },
+
+        _startKeepAlive() {
+            this._stopKeepAlive();
+            this._keepAliveTimer = setInterval(() => {
+                try {
+                    if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+                        window.speechSynthesis.resume();
+                    }
+                } catch {}
+            }, 200);
+        }
+        , _stopKeepAlive() {
+            if (this._keepAliveTimer) {
+                clearInterval(this._keepAliveTimer);
+                this._keepAliveTimer = null;
+            }
+        },
+
+        stop() {
+            try {
+                window.speechSynthesis.cancel();
+            } catch {}
+            this.speaking = false;
+            this.currentUtter = null;
+            this._stopKeepAlive();
+        },
+
+        async speak(text, lang, hooks = {}) {
+            if (!('speechSynthesis' in window) || !text ?.trim()) {
+                hooks.onerror ?.();
+                return;
+            }
+
+            this.stop();
+            try {
+                window.speechSynthesis.resume ?.();
+            } catch {}
+
+            await this.ensureVoices(2000);
+
+            const MAX_RETRIES = 3;
+            const START_TIMEOUT = 1400;
+            let attempt = 0;
+
+            const trySpeak = async() => {
+                attempt++;
+
+                try {
+                    const p = new SpeechSynthesisUtterance(' ');
+                    p.volume = 0;
+                    window.speechSynthesis.speak(p);
+                    window.speechSynthesis.cancel();
+                } catch {}
+
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.lang = (lang === 'de' ? 'de-DE' : 'tr-TR');
+                const v = this.pickVoice(lang);
+                if (v) utter.voice = v;
+
+                let started = false;
+                let startTimer;
+
+                utter.onstart = () => {
+                    started = true;
+                    this.speaking = true;
+                    hooks.onstart ?.();
+                    this._startKeepAlive();
+                    clearTimeout(startTimer);
+                };
+                utter.onend = () => {
+                    this.speaking = false;
+                    this.currentUtter = null;
+                    this._stopKeepAlive();
+                    hooks.onend ?.();
+                    clearTimeout(startTimer);
+                };
+                utter.onerror = () => {
+                    this.speaking = false;
+                    this.currentUtter = null;
+                    this._stopKeepAlive();
+                    if (!started && attempt < MAX_RETRIES) {
+                        setTimeout(trySpeak, 250);
+                    } else {
+                        hooks.onerror ?.();
+                    }
+                    clearTimeout(startTimer);
+                };
+
+                startTimer = setTimeout(() => {
+                    if (!started) {
+                        try {
+                            window.speechSynthesis.cancel();
+                        } catch {}
+                        if (attempt < MAX_RETRIES) setTimeout(trySpeak, 200);
+                        else hooks.onerror ?.();
+                    }
+                }, START_TIMEOUT);
+
+                try {
+                    this.currentUtter = utter;
+                    window.speechSynthesis.speak(utter);
+                } catch {
+                    clearTimeout(startTimer);
+                    if (attempt < MAX_RETRIES) {
+                        await sleep(200);
+                        trySpeak();
+                    } else hooks.onerror ?.();
+                }
+            };
+
+            trySpeak();
+        }
+    };
+    window.ttsManager = window.ttsManager || ttsManager;
+
+    const injectStyles = () => {
+        const css = `
+      #textInputArea { position: relative !important; }
+      #correctAnswer { position: relative !important; padding-right: 54px !important; }
+
+      .ti-listen {
+        position: absolute !important;
+        top: 50% !important; transform: translateY(-50%) !important;
+        right: 12px !important; z-index: 20 !important;
+        width: 36px !important; height: 36px !important; border-radius: 50% !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        cursor: pointer !important; transition: transform .2s ease !important;
+        border:1px solid currentColor !important; background: transparent !important;
+        font-size: 0 !important;
+      }
+      
+      .ti-listen.correct { color:#22c55e !important; }
+      .ti-listen.incorrect { color:#ef4444 !important; width:32px !important; height:32px !important; }
+
+      .ti-icon { width:18px; height:18px; display:block; }
+      .ti-icon.stop { width:16px; height:16px; }
+
+      .ti-listen.is-loading::after {
+        content:""; position:absolute; inset:-3px;
+        border-radius:50%;
+        border: 2px solid currentColor;
+        border-right-color: transparent; border-bottom-color: transparent;
+        opacity:.35;
+        animation: ti-spin .8s linear infinite;
+      }
+      @keyframes ti-spin { to { transform: rotate(360deg); } }
+
+      .ti-shake { animation: ti-shk .25s linear 1; }
+      @keyframes ti-shk {
+        0%,100% { transform: translateY(-50%) translateX(0); }
+        25% { transform: translateY(-50%) translateX(-1px); }
+        75% { transform: translateY(-50%) translateX(1px); }
+      }
+    `;
+        const s = document.createElement('style');
+        s.textContent = css;
+        document.head.appendChild(s);
+    };
+
+    class TextInputListenEnhancement {
+        constructor() {
+            this.correctBtn = null;
+            this.incorrectBtn = null;
+            this.activeBtn = null;
+
+            injectStyles();
+            this.setupListenModeWatchers();
+            this.observeQA();
+
+      ['nextBtn', 'prevBtn'].forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.addEventListener('click', () => this.cleanup());
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    try {
+                        window.speechSynthesis.resume ?.();
+                    } catch {}
+                }
+            });
+
+            this.onListenModeChange();
+        }
+
+        isListenModeOn() {
+            const el = document.getElementById('listenMode');
+            if (el) {
+                const t = (el.tagName || '')
+                    .toLowerCase();
+                const type = (el.getAttribute('type') || '')
+                    .toLowerCase();
+                if (t === 'input' && (type === 'checkbox' || type === 'radio')) return !!el.checked;
+                return el.classList.contains('active') || el.getAttribute('aria-pressed') === 'true' || el.dataset.on === 'true';
+            }
+            return document.body.classList.contains('listen-mode-on');
+        }
+
+        setupListenModeWatchers() {
+            const el = document.getElementById('listenMode');
+            if (!el) {
+                const bodyObs = new MutationObserver(() => this.onListenModeChange());
+                bodyObs.observe(document.body, {
+                    attributes: true
+                    , attributeFilter: ['class']
+                });
+                return;
+            }
+            const t = (el.tagName || '')
+                .toLowerCase();
+            const type = (el.getAttribute('type') || '')
+                .toLowerCase();
+            if (t === 'input' && (type === 'checkbox' || type === 'radio')) {
+                el.addEventListener('change', () => this.onListenModeChange());
+            } else {
+                el.addEventListener('click', () => this.onListenModeChange());
+                const attrObs = new MutationObserver(() => this.onListenModeChange());
+                attrObs.observe(el, {
+                    attributes: true
+                    , attributeFilter: ['class', 'aria-pressed', 'data-on']
+                });
+            }
+        }
+
+        onListenModeChange() {
+            if (!this.isListenModeOn()) {
+                this.cleanup();
+                return;
+            }
+            this.onInputStyleChange();
+            this.onCorrectAnswerChange();
+        }
+
+        observeQA() {
+            const textInput = document.getElementById('textInput');
+            const correctAnswer = document.getElementById('correctAnswer');
+            const submit = document.getElementById('textSubmitBtn');
+            if (!textInput || !correctAnswer) return;
+
+            const inputObs = new MutationObserver(() => this.onInputStyleChange());
+            inputObs.observe(textInput, {
+                attributes: true
+                , attributeFilter: ['style', 'class']
+            });
+
+            const ansObs = new MutationObserver(() => this.onCorrectAnswerChange());
+            ansObs.observe(correctAnswer, {
+                attributes: true
+                , attributeFilter: ['style', 'class']
+                , childList: true
+                , subtree: true
+            });
+
+            if (submit) submit.addEventListener('click', () => setTimeout(() => {
+                this.onInputStyleChange();
+                this.onCorrectAnswerChange();
+            }, 0));
+        }
+
+        onInputStyleChange() {
+            if (!this.isListenModeOn()) {
+                this.removeCorrectBtn();
+                return;
+            }
+
+            const input = document.getElementById('textInput');
+            if (!input) return;
+            const bg = (input.style.backgroundColor || '')
+                .toLowerCase();
+            const border = (input.style.border || '')
+                .toLowerCase();
+            const isGreen = bg.includes('199, 232, 212') || border.includes('green');
+            if (isGreen) {
+                this.addCorrectBtn();
+                this.removeIncorrectBtn();
+            } else {
+                this.removeCorrectBtn();
+            }
+        }
+
+        onCorrectAnswerChange() {
+            if (!this.isListenModeOn()) {
+                this.removeIncorrectBtn();
+                return;
+            }
+
+            const ca = document.getElementById('correctAnswer');
+            if (!ca) return;
+            const visible = (ca.style.display === 'block') || (window.getComputedStyle(ca)
+                .display === 'block');
+            if (visible && ca.textContent.trim() !== '') {
+                this.addIncorrectBtn();
+                this.removeCorrectBtn();
+            } else {
+                this.removeIncorrectBtn();
+            }
+        }
+
+        addCorrectBtn() {
+            if (this.correctBtn || !this.isListenModeOn()) return;
+            const area = document.getElementById('textInputArea');
+            if (!area) return;
+            const btn = this.createBtn('correct');
+            area.appendChild(btn);
+            this.correctBtn = btn;
+        }
+        addIncorrectBtn() {
+            if (this.incorrectBtn || !this.isListenModeOn()) return;
+            const ca = document.getElementById('correctAnswer');
+            if (!ca) return;
+            const btn = this.createBtn('incorrect');
+            ca.appendChild(btn);
+            this.incorrectBtn = btn;
+        }
+        removeCorrectBtn() {
+            if (this.correctBtn) {
+                this.correctBtn.remove();
+                this.correctBtn = null;
+            }
+        }
+        removeIncorrectBtn() {
+            if (this.incorrectBtn) {
+                this.incorrectBtn.remove();
+                this.incorrectBtn = null;
+            }
+        }
+
+        createBtn(type) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `ti-listen ${type}`;
+            this.setBtnState(btn, 'idle');
+
+            btn.addEventListener('click', async(e) => {
+                e.preventDefault();
+                if (!this.isListenModeOn()) return;
+
+                if (btn.classList.contains('is-playing')) {
+                    ttsManager.stop();
+                    this.setBtnState(btn, 'idle');
+                    this.activeBtn = null;
+                    return;
+                }
+
+                if (this.activeBtn && this.activeBtn !== btn) this.setBtnState(this.activeBtn, 'idle');
+                const {
+                    text
+                    , lang
+                } = this.getCorrectTextAndLang();
+                if (!text) return;
+
+                this.setBtnState(btn, 'loading');
+                this.activeBtn = btn;
+
+                ttsManager.speak(text, lang, {
+                    onstart: () => this.setBtnState(btn, 'playing')
+                    , onend: () => {
+                        if (this.activeBtn === btn) this.setBtnState(btn, 'idle');
+                        this.activeBtn = null;
+                    }
+                    , onerror: () => {
+                        btn.classList.add('ti-shake');
+                        setTimeout(() => btn.classList.remove('ti-shake'), 260);
+                        if (this.activeBtn === btn) this.setBtnState(btn, 'idle');
+                        this.activeBtn = null;
+                    }
+                });
+            });
+
+            return btn;
+        }
+
+        setBtnState(btn, state) {
+            btn.classList.remove('is-loading', 'is-playing');
+            if (state === 'loading') {
+                btn.classList.add('is-loading');
+                btn.innerHTML = this.svgVolume();
+            } else if (state === 'playing') {
+                btn.classList.add('is-playing');
+                btn.innerHTML = this.svgStop();
+            } else {
+                btn.innerHTML = this.svgVolume();
+            }
+        }
+
+        svgVolume() {
+            return `
+        <svg class="ti-icon volume" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 10v4h4l5 4V6L7 10H3z"></path>
+          <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.06A4.49 4.49 0 0 0 16.5 12z"></path>
+          <path d="M14 3.23v2.06c2.89 1 5 3.77 5 6.71s-2.11 5.71-5 6.71v2.06c4.01-1.11 7-4.89 7-8.77s-2.99-7.66-7-8.77z"></path>
+        </svg>
+      `;
+        }
+        svgStop() {
+            return `
+        <svg class="ti-icon stop" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+        </svg>
+      `;
+        }
+
+        getCorrectTextAndLang() {
+            const q = (document.getElementById('questionText') ?.textContent || '');
+            const lang = (/\bAlmanca\b|Almancası|Almanca karşılığı/i.test(q)) ? 'de' : 'tr';
+            let text = '';
+            const ca = document.getElementById('correctAnswer');
+            const strong = ca ? ca.querySelector('strong') : null;
+            const caVisible = ca && ((ca.style.display === 'block') || (window.getComputedStyle(ca)
+                .display === 'block'));
+            if (caVisible && strong) text = strong.textContent.trim();
+            else text = (document.getElementById('textInput') ?.value || '')
+                .trim();
+            return {
+                text
+                , lang
+            };
+        }
+
+        cleanup() {
+            this.setBtnStateIfExists(this.correctBtn, 'idle');
+            this.setBtnStateIfExists(this.incorrectBtn, 'idle');
+            this.removeCorrectBtn();
+            this.removeIncorrectBtn();
+            this.activeBtn = null;
+            ttsManager.stop();
+        }
+        setBtnStateIfExists(btn, state) {
+            if (btn) this.setBtnState(btn, state);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => new TextInputListenEnhancement());
+})();
+
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('toggleControlsBtn');
+    const bottomControls = document.querySelector('.bottom-controls');
+    const enaltbar = document.querySelector('.enaltbar');
+
+    if (toggleBtn && bottomControls && enaltbar) {
+        toggleBtn.addEventListener('click', function () {
+            bottomControls.classList.toggle('hidden');
+            toggleBtn.classList.toggle('rotated');
+
+            if (bottomControls.classList.contains('hidden')) {
+                enaltbar.style.height = '0px';
+            } else {
+                enaltbar.style.height = '';
+            }
+        });
+    }
+});
+
+function isMobile() {
+    return window.matchMedia('(max-width: 768px)')
+        .matches;
+}
+
+function openBottomControls() {
+    if (!isMobile()) return;
+    const bottom = document.querySelector('.bottom-controls');
+    const btn = document.getElementById('toggleControlsBtn');
+    const bar = document.querySelector('.enaltbar');
+    if (!bottom || !btn || !bar) return;
+
+    clearTimeout(window.__openBottomTimer);
+
+    window.__openBottomTimer = setTimeout(() => {
+        bottom.classList.remove('hidden');
+        btn.classList.add('rotated');
+        bar.style.height = '';
+    }, 1000);
+}
+
+function closeBottomControls() {
+    if (!isMobile()) return;
+    const bottom = document.querySelector('.bottom-controls');
+    const btn = document.getElementById('toggleControlsBtn');
+    const bar = document.querySelector('.enaltbar');
+    if (!bottom || !btn || !bar) return;
+
+    clearTimeout(window.__openBottomTimer);
+
+    bottom.classList.add('hidden');
+    btn.classList.remove('rotated');
+    bar.style.height = '0px';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.sidebar-btn')
+        .forEach(btn => btn.addEventListener('click', closeBottomControls));
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new QuizApp();
+
+    window.quizApp = app;
+    loadCategories();
+
+    closeBottomControls();
+});
+
+document.getElementById('topiclist')
+    .addEventListener('click', function (e) {
+        kilitAcCategory();
+        e.stopPropagation();
+        document.getElementById('categoryPanel')
+            .classList.add('show');
+        document.getElementById('categoryOverlay')
+            .classList.add('show');
+    });
+
+document.getElementById('categoryOverlay')
+    .addEventListener('click', function () {
+        document.getElementById('categoryPanel')
+            .classList.remove('show');
+        document.getElementById('categoryOverlay')
+            .classList.remove('show');
+    });
+
+function loadCategories() {
+    const categoryList = document.getElementById('categoryList');
+    categoryList.innerHTML = '';
+
+    const categories = Object.keys(wordData);
+
+
+    categories.forEach((category, index) => {
+        const words = Object.keys(wordData[category])
+            .length;
+
+        const item = document.createElement('div');
+        item.className = 'category-item';
+        item.innerHTML = `
+      <div class="category-number">${index + 1}</div>
+      <div class="category-details">
+        <h4>${category}</h4>
+        <p>${words} kelime</p>
+      </div>
+    `;
+
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.category-item.selected')
+                .forEach(el => el.classList.remove('selected'));
+
+            item.classList.add('selected');
+
+            const quizOverlay = document.getElementById('quizCompletedOverlay');
+            if (quizOverlay) {
+                quizOverlay.classList.remove('show');
+                quizOverlay.style.display = 'none';
+            }
+
+            window.quizApp.setCategory(category);
+
+            if (document.getElementById('wordListModal')
+                .classList.contains('show')) {
+                initializeWordList();
+                displayWordsInTable();
+            }
+
+            document.getElementById('categoryPanel')
+                .classList.remove('show');
+            document.getElementById('categoryOverlay')
+                .classList.remove('show');
+            document.getElementById('topiclist')
+                .style.bottom = '10px';
+        });
+
+
+
+
+        categoryList.appendChild(item);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const DEFAULT_CAT = 'Meyveler';
+
+    setTimeout(() => {
+        document.querySelectorAll('#categoryList .category-item.selected')
+            .forEach(el => el.classList.remove('selected'));
+
+        const target = [...document.querySelectorAll('#categoryList .category-item')]
+            .find(li => li.querySelector('h4') ?.textContent.trim()
+                .toLowerCase() === DEFAULT_CAT.toLowerCase());
+
+        if (target) target.classList.add('selected');
+    }, 0);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const topiclist = document.getElementById('topiclist');
+    const categoryPanel = document.getElementById('categoryPanel');
+    const overlay = document.getElementById('categoryOverlay');
+
+    if (!topiclist || !categoryPanel || !overlay) return;
+
+    const originalPosition = topiclist.style.bottom;
+
+    topiclist.addEventListener('click', function (e) {
+        e.stopPropagation();
+
+        topiclist.style.transition = 'bottom 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
+        topiclist.style.bottom = '-100px';
+
+        setTimeout(() => {
+            categoryPanel.classList.add('show');
+            overlay.classList.add('show');
+        }, 200);
+    });
+
+    overlay.addEventListener('click', function () {
+        categoryPanel.classList.remove('show');
+
+        setTimeout(() => {
+            overlay.classList.remove('show');
+            topiclist.style.bottom = originalPosition || '10px';
+        }, 100);
+    });
+});
+
+
+(function(){
+    const ready=Promise.all([
+        new Promise(r=>window.addEventListener('load',r,{once:true})),
+        (document.fonts&&document.fonts.ready)||Promise.resolve()
+    ]);
+
+    ready
+      .then(()=>{                       
+          const imgs=[...document.querySelectorAll('img,object[type="image/svg+xml"]')];
+          return Promise.all(imgs.map(el=>{
+              if(el.tagName==='IMG'&&el.decode)return el.decode().catch(()=>{});
+              if(el.tagName==='OBJECT')return new Promise(r=>el.addEventListener('load',r,{once:true}));
+              return Promise.resolve();
+          }));
+      })
+      .then(()=>new Promise(r=>setTimeout(r,4000))) 
+      .then(()=>{
+          const l=document.getElementById('pageLoader');
+          if(!l)return;
+          l.classList.add('hide');
+          setTimeout(()=>l.remove(),500);
+      });
+})();
+
+
+
+</script>
+
 </body>
 
 </html>
