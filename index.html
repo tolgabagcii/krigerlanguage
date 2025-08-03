@@ -989,6 +989,7 @@ class QuizApp {
 
 
             this.state.correctAnswers++;
+playCorrectSound();
             
             inputElement.classList.remove('error');
             correctAnswerElement.style.display = 'none';
@@ -1009,14 +1010,15 @@ class QuizApp {
                 }
                 answerHTML = german;
             } else { 
+playIncorrectSound();
                 answerHTML = this.state.currentWord.Türkçe;
             }
-playIncorrectSound();
+
 
             correctAnswerElement.innerHTML = `Doğru cevap: <strong>${answerHTML}</strong>`;
             if (answer === correctAnswer) {
                 correctAnswerElement.className = 'correct-answer correct';
-playCorrectSound();
+
                 this.setSidebarStatus('correct');
 
 
