@@ -879,7 +879,7 @@ class QuizApp {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new QuizApp();
+    
     window.quizApp = app;
 
 });
