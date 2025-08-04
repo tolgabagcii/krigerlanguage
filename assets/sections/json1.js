@@ -1,4 +1,4 @@
-window.json1 = {
+window.json3 = {
   "Meyveler": {
     "word1": {
       "Almanca": "der Apfel",
