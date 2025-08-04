@@ -1,4 +1,3 @@
-/* Meyveler */
 window.json1 = {
   "Meyveler": {
     "word1": {

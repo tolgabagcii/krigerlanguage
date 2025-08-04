@@ -1,4 +1,3 @@
-/* Nesneler */
 window.json2 = {
   "Nesneler": {
     "word1": {
