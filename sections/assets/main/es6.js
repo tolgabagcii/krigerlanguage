@@ -902,7 +902,6 @@ function initializeWordList() {
             allWordsForTable.push({
                 german: w.Almanca
                 , turkish: w.Türkçe
-                , type: w['kelime türü']
                 , example: w['örnek cümle']
                 , category: cat
             });
@@ -963,7 +962,6 @@ function displayWordsInTable() {
         row.innerHTML = `
       <span class="german-word">${germanWord}</span>
       <span class="turkish-word">${word.turkish}</span>
-      <span class="word-type-tag">${word.type}</span>
       
     `;
 
@@ -1004,8 +1002,6 @@ function searchInWordList() {
             word.turkish.toLowerCase()
             .includes(searchTerm) ||
             word.category.toLowerCase()
-            .includes(searchTerm) ||
-            word.type.toLowerCase()
             .includes(searchTerm) ||
             word.example.toLowerCase()
             .includes(searchTerm)
@@ -1088,7 +1084,6 @@ function downloadTableAsPDF() {
     const tableData = filteredWords.map(word => [
         word.german.replace(/<[^>]*>/g, '')
         , word.turkish
-        , word.type
         , word.example
     ]);
 
